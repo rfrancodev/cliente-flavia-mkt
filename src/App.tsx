@@ -80,8 +80,6 @@ export default function App() {
     phone?: string;
     email?: string;
   }>({});
-  const [leadsList, setLeadsList] = useState<any[]>([]);
-  const [showLeadsPanel, setShowLeadsPanel] = useState(false);
 
   // Design Portfolio Auto-Highlight states
   const [highlightedDesignId, setHighlightedDesignId] = useState<string>("d1");
@@ -104,53 +102,6 @@ export default function App() {
 
   // References
   const simulationIntervalRef = useRef<NodeJS.Timeout | null>(null);
-
-  // Fetch local leads on mount
-  useEffect(() => {
-    const savedLeads = localStorage.getItem("ana_flavia_leads");
-    if (savedLeads) {
-      try {
-        setLeadsList(JSON.parse(savedLeads));
-      } catch (e) {
-        console.error(e);
-      }
-    }
-  }, []);
-
-  // Fetch leads from Cloudflare Pages D1 Database
-  const fetchDbLeads = async () => {
-    try {
-      const response = await fetch("/api/leads");
-      if (response.ok) {
-        const data = await response.json();
-        if (data.success && Array.isArray(data.leads)) {
-          // Sync database leads with local leads, avoiding duplicates by id
-          setLeadsList(prev => {
-            const merged = [...data.leads, ...prev];
-            const uniqueMap = new Map();
-            merged.forEach(lead => {
-              if (lead && lead.id) {
-                uniqueMap.set(lead.id, lead);
-              }
-            });
-            const uniqueLeads = Array.from(uniqueMap.values());
-            // Update local storage to keep them in sync
-            localStorage.setItem("ana_flavia_leads", JSON.stringify(uniqueLeads));
-            return uniqueLeads;
-          });
-        }
-      }
-    } catch (e) {
-      console.warn("Could not sync with Cloudflare D1 database. Using local backup.", e);
-    }
-  };
-
-  // Sync leads when panel is opened
-  useEffect(() => {
-    if (showLeadsPanel) {
-      fetchDbLeads();
-    }
-  }, [showLeadsPanel]);
 
   // Filter cases based on selected category tab
   // When "todos" is selected, display exactly 1 case from each client.
@@ -290,10 +241,6 @@ export default function App() {
       date: new Date().toLocaleString("pt-BR")
     };
     
-    const updatedLeads = [newLead, ...leadsList];
-    setLeadsList(updatedLeads);
-    localStorage.setItem("ana_flavia_leads", JSON.stringify(updatedLeads));
-    
     setFormSubmitted(true);
     setDbSavedStatus("submitting");
 
@@ -328,23 +275,6 @@ export default function App() {
       setTimeout(() => {
         window.open(whatsappUrl, "_blank");
       }, 1500);
-    });
-  };
-
-  // Clear leads helper
-  const handleClearLeads = () => {
-    localStorage.removeItem("ana_flavia_leads");
-    setLeadsList([]);
-
-    // Clear Cloudflare Pages D1 Database
-    fetch("/api/leads", {
-      method: "DELETE"
-    }).then(response => {
-      if (response.ok) {
-        console.log("All database leads cleared successfully.");
-      }
-    }).catch(err => {
-      console.warn("Could not clear leads from Cloudflare database.", err);
     });
   };
 
@@ -1748,82 +1678,11 @@ export default function App() {
                 )}
               </div>
 
-              {/* Developer Real-Time lead notification/panel */}
-              <div className="mt-6 pt-4 border-t border-brand-olive-800 flex items-center justify-between">
-                <div className="flex items-center gap-2 text-xs text-brand-olive-400">
-                  <Database className="h-3.5 w-3.5" />
-                  <span>Leads Salvos Localmente: <strong className="text-white">{leadsList.length}</strong></span>
-                </div>
-                {leadsList.length > 0 && (
-                  <button 
-                    onClick={() => setShowLeadsPanel(!showLeadsPanel)}
-                    className="text-[10px] text-brand-gold-400 hover:underline font-bold uppercase tracking-wider cursor-pointer"
-                  >
-                    {showLeadsPanel ? SITE_COPY.leadsPanel.toggleHide : SITE_COPY.leadsPanel.toggleShow}
-                  </button>
-                )}
-              </div>
-
             </div>
 
           </div>
         </div>
       </section>
-
-      {/* Real-time B2B Leads viewer panel */}
-      <AnimatePresence>
-        {showLeadsPanel && leadsList.length > 0 && (
-          <motion.section 
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: "auto" }}
-            exit={{ opacity: 0, height: 0 }}
-            className="bg-brand-olive-900 border-b border-brand-olive-800 text-brand-olive-100 py-10"
-          >
-            <div className="max-w-7xl mx-auto px-4 space-y-6">
-              <div className="flex items-center justify-between border-b border-brand-olive-800 pb-3">
-                <h3 className="font-serif text-lg font-bold text-white flex items-center gap-2">
-                  <Database className="h-5 w-5 text-brand-gold-400" />
-                  {SITE_COPY.leadsPanel.title}
-                </h3>
-                <button 
-                  onClick={handleClearLeads}
-                  className="px-3 py-1 bg-red-950 hover:bg-red-900 text-red-200 border border-red-500/20 rounded text-[10px] font-bold uppercase tracking-wider transition-colors cursor-pointer"
-                >
-                  {SITE_COPY.leadsPanel.clearButton}
-                </button>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                {leadsList.map((lead) => (
-                  <div key={lead.id} className="p-4 bg-brand-olive-950 rounded-xl border border-brand-olive-800 text-left space-y-3 relative shadow-inner">
-                    <span className="absolute top-3 right-3 text-[9px] text-brand-olive-500 font-semibold">{lead.date}</span>
-                    <div>
-                      <h4 className="font-serif text-sm font-bold text-white">{lead.name}</h4>
-                      <p className="text-xs text-brand-gold-400 font-mono font-medium">{lead.company}</p>
-                    </div>
-                    <div className="space-y-1 text-xs text-brand-olive-300">
-                      <div><strong className="text-stone-400">WhatsApp:</strong> {lead.phone}</div>
-                      <div><strong className="text-stone-400">E-mail:</strong> {lead.email}</div>
-                      <div><strong className="text-stone-400">Segmento:</strong> <span className="uppercase font-bold text-[10px] text-brand-gold-300">{lead.segment}</span></div>
-                    </div>
-                    <p className="text-xs text-brand-olive-200 border-t border-brand-olive-800 pt-2 italic">
-                      "{lead.message || "Sem mensagem complementar."}"
-                    </p>
-                    <a 
-                      href={`https://wa.me/${lead.phone.replace(/\D/g, "")}`}
-                      target="_blank" 
-                      rel="noreferrer"
-                      className="inline-flex items-center gap-1 text-[10px] uppercase font-bold text-emerald-400 hover:underline pt-1"
-                    >
-                      Iniciar Conversa no WhatsApp <ArrowUpRight className="h-3 w-3" />
-                    </a>
-                  </div>
-                ))}
-              </div>
-            </div>
-          </motion.section>
-        )}
-      </AnimatePresence>
 
       {/* Footer */}
       <footer className="bg-brand-olive-950 py-12 text-brand-olive-400 text-center border-t border-brand-olive-900 px-4">

@@ -12,9 +12,11 @@ interface Env {
   };
 }
 
+// Interface estendida com o método waitUntil obrigatório para o Cloudflare Workers
 interface RequestContext {
   request: Request;
   env: Env;
+  waitUntil: (promise: Promise<any>) => void;
 }
 
 const CORS_HEADERS = {
@@ -23,6 +25,9 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Methods": "GET, POST, DELETE, OPTIONS",
   "Access-Control-Allow-Headers": "Content-Type",
 };
+
+// URL única do fluxo da Ana Flávia dentro do seu n8n
+const N8N_WEBHOOK_URL = "https://n8n.francorafael.com/webhook/69bf5cb1-ea37-4ee3-a313-f5cfe13a50a0";
 
 // OPTIONS handler for preflight requests
 export async function onRequestOptions(): Promise<Response> {
@@ -60,9 +65,9 @@ export async function onRequestGet(context: RequestContext): Promise<Response> {
   }
 }
 
-// POST /api/leads - Create a new lead
+// POST /api/leads - Create a new lead and sync with n8n
 export async function onRequestPost(context: RequestContext): Promise<Response> {
-  const { request, env } = context;
+  const { request, env, waitUntil } = context;
 
   if (!env.DB) {
     return new Response(
@@ -94,23 +99,54 @@ export async function onRequestPost(context: RequestContext): Promise<Response> 
       );
     }
 
+    const leadId = lead.id || Date.now().toString();
+    const leadSegment = lead.segment || "moda";
+    const leadMessage = lead.message || "";
+    const leadDate = lead.date || new Date().toISOString();
+
+    // 1. Salva no banco de dados D1 local da Cloudflare
     await env.DB.prepare(
       "INSERT OR REPLACE INTO leads (id, name, company, phone, segment, email, message, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
     )
       .bind(
-        lead.id || Date.now().toString(),
+        leadId,
         lead.name,
         lead.company,
         lead.phone,
-        lead.segment || "moda",
+        leadSegment,
         lead.email,
-        lead.message || "",
-        lead.date || new Date().toISOString()
+        leadMessage,
+        leadDate
       )
       .run();
 
+    // 2. Monta o objeto estruturado para enviar ao n8n
+    const payloadParaN8n = {
+      id: leadId,
+      name: lead.name,
+      company: lead.company,
+      phone: lead.phone,
+      segment: leadSegment,
+      email: lead.email,
+      message: leadMessage,
+      date: leadDate,
+      source: "anaflaviafranco.com"
+    };
+
+    // 3. Envia os dados de forma assíncrona para o n8n sem atrasar o carregamento da página do usuário
+    waitUntil(
+      fetch(N8N_WEBHOOK_URL, {
+        method: "POST",
+        headers: { 
+          "Content-Type": "application/json",
+          "X-Source-Application": "Cloudflare-Pages" 
+        },
+        body: JSON.stringify(payloadParaN8n)
+      }).catch(err => console.error("Falha ao enviar lead para o n8n:", err))
+    );
+
     return new Response(
-      JSON.stringify({ success: true, lead }),
+      JSON.stringify({ success: true, lead: payloadParaN8n }),
       { status: 201, headers: CORS_HEADERS }
     );
   } catch (error: any) {
