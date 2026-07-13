@@ -11,13 +11,11 @@ interface Env {
     exec: (query: string) => Promise<any>;
   };
 }
-// teste forms
 
 interface RequestContext {
   request: Request;
   env: Env;
 }
-
 
 const CORS_HEADERS = {
   "Content-Type": "application/json",
