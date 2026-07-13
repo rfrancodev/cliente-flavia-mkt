@@ -24,22 +24,6 @@ const CORS_HEADERS = {
   "Access-Control-Allow-Headers": "Content-Type",
 };
 
-// Initialize the database table if it doesn't exist
-async function ensureTableExists(db: NonNullable<Env["DB"]>) {
-  await db.exec(`
-    CREATE TABLE IF NOT EXISTS leads (
-      id TEXT PRIMARY KEY,
-      name TEXT NOT NULL,
-      company TEXT NOT NULL,
-      phone TEXT NOT NULL,
-      segment TEXT NOT NULL,
-      email TEXT NOT NULL,
-      message TEXT,
-      date TEXT NOT NULL
-    );
-  `);
-}
-
 // OPTIONS handler for preflight requests
 export async function onRequestOptions(): Promise<Response> {
   return new Response(null, {
@@ -56,14 +40,13 @@ export async function onRequestGet(context: RequestContext): Promise<Response> {
     return new Response(
       JSON.stringify({
         success: false,
-        error: "D1 Database 'DB' binding is missing in Cloudflare Pages. Please create a D1 database and bind it with the variable name 'DB' in Pages dashboard settings under Functions."
+        error: "D1 Database 'DB' binding is missing in Cloudflare Pages."
       }),
       { status: 500, headers: CORS_HEADERS }
     );
   }
 
   try {
-    await ensureTableExists(env.DB);
     const { results } = await env.DB.prepare("SELECT * FROM leads ORDER BY id DESC").all();
     return new Response(
       JSON.stringify({ success: true, leads: results }),
@@ -85,7 +68,7 @@ export async function onRequestPost(context: RequestContext): Promise<Response> 
     return new Response(
       JSON.stringify({
         success: false,
-        error: "D1 Database 'DB' binding is missing in Cloudflare Pages. Please create a D1 database and bind it with the variable name 'DB' in Pages dashboard settings under Functions."
+        error: "D1 Database 'DB' binding is missing in Cloudflare Pages."
       }),
       { status: 500, headers: CORS_HEADERS }
     );
@@ -110,8 +93,6 @@ export async function onRequestPost(context: RequestContext): Promise<Response> 
         { status: 400, headers: CORS_HEADERS }
       );
     }
-
-    await ensureTableExists(env.DB);
 
     await env.DB.prepare(
       "INSERT OR REPLACE INTO leads (id, name, company, phone, segment, email, message, date) VALUES (?, ?, ?, ?, ?, ?, ?, ?)"
@@ -148,14 +129,13 @@ export async function onRequestDelete(context: RequestContext): Promise<Response
     return new Response(
       JSON.stringify({
         success: false,
-        error: "D1 Database 'DB' binding is missing in Cloudflare Pages. Please create a D1 database and bind it with the variable name 'DB' in Pages dashboard settings under Functions."
+        error: "D1 Database 'DB' binding is missing in Cloudflare Pages."
       }),
       { status: 500, headers: CORS_HEADERS }
     );
   }
 
   try {
-    await ensureTableExists(env.DB);
     await env.DB.prepare("DELETE FROM leads").run();
     return new Response(
       JSON.stringify({ success: true, message: "All leads cleared from D1 database." }),
