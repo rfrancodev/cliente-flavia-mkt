@@ -1582,7 +1582,7 @@ export default function App() {
                         </div>
                         <h4 className="font-serif text-lg font-bold text-white">Salvo no Banco de Dados!</h4>
                         <p className="text-xs text-brand-olive-300 max-w-sm mx-auto leading-relaxed">
-                          Sua solicitação foi registrada com sucesso no <strong>Cloudflare D1 Database</strong>. Ana Flávia entrará em contato em breve!
+                          Sua solicitação foi registrada Ana Flávia entrará em contato em breve!
                         </p>
                         <p className="text-[11px] text-brand-gold-400">
                           Se você preferir falar agora, use o botão opcional abaixo para iniciar a conversa no WhatsApp.
