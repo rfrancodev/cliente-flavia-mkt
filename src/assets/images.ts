@@ -1,5 +1,9 @@
 import anaFlaviaHome from "./images/anaflavia_home.png";
 import officeAesthetic from "./images/office_aesthetic_1783889836010.jpg";
+import miluLogo from "./images/milu-logo.png";
+import delreyLogo from "./images/delrey-logo.png";
+import luluzinhaLogo from "./images/luluzinha-logo.png";
+import ellyLogo from "./images/elly-logo.png";
 
 export const IMAGES = {
   // Local/Internal Assets
@@ -7,10 +11,10 @@ export const IMAGES = {
   aboutOffice: officeAesthetic,
 
   // Client Logos / Icons
-  clientMilu: "https://images.unsplash.com/photo-1520006403909-838d6b92c22e?q=80&w=300&auto=format&fit=crop",
-  clientDelRey: "https://images.unsplash.com/photo-1427504494785-3a9ca7044f45?q=80&w=300&auto=format&fit=crop",
-  clientLuluzinha: "https://images.unsplash.com/photo-1535632066927-ab7c9ab60908?q=80&w=300&auto=format&fit=crop",
-  clientStudio360: "https://images.unsplash.com/photo-1560066984-138dadb4c035?q=80&w=300&auto=format&fit=crop",
+  clientMilu: miluLogo,
+  clientDelRey: delreyLogo,
+  clientLuluzinha: luluzinhaLogo,
+  clientStudio360: ellyLogo,
 
   // Portfolio Cover Cases
   caseModa1: "https://images.unsplash.com/photo-1544816155-12df9643f363?q=80&w=600&auto=format&fit=crop",
