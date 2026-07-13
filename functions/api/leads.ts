@@ -126,7 +126,7 @@ export async function onRequestPost(context: RequestContext): Promise<Response> 
         lead.segment || "moda",
         lead.email,
         lead.message || "",
-        lead.date || new Date().toLocaleString("pt-BR")
+        lead.date || new Date().toISOString()
       )
       .run();
 
