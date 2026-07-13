@@ -10,6 +10,7 @@ interface Env {
     };
     exec: (query: string) => Promise<any>;
   };
+  N8N_WEBHOOK_URL?: string;
 }
 
 // Interface estendida com o método waitUntil obrigatório para o Cloudflare Workers
@@ -135,7 +136,7 @@ export async function onRequestPost(context: RequestContext): Promise<Response> 
 
     // 3. Envia os dados de forma assíncrona para o n8n sem atrasar o carregamento da página do usuário
     waitUntil(
-      fetch(N8N_WEBHOOK_URL, {
+      fetch(env.N8N_WEBHOOK_URL || N8N_WEBHOOK_URL, {
         method: "POST",
         headers: { 
           "Content-Type": "application/json",
