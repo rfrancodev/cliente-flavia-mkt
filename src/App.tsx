@@ -73,6 +73,13 @@ export default function App() {
     message: ""
   });
   const [formSubmitted, setFormSubmitted] = useState(false);
+  const [dbSavedStatus, setDbSavedStatus] = useState<'success' | 'failed' | 'submitting' | null>(null);
+  const [formErrors, setFormErrors] = useState<{
+    name?: string;
+    company?: string;
+    phone?: string;
+    email?: string;
+  }>({});
   const [leadsList, setLeadsList] = useState<any[]>([]);
   const [showLeadsPanel, setShowLeadsPanel] = useState(false);
 
@@ -217,13 +224,66 @@ export default function App() {
   };
 
   // Form Submission
+  const formatPhone = (value: string) => {
+    const digits = value.replace(/\D/g, "");
+    if (digits.length <= 2) {
+      return digits;
+    }
+    if (digits.length <= 6) {
+      return `(${digits.slice(0, 2)}) ${digits.slice(2)}`;
+    }
+    if (digits.length <= 10) {
+      return `(${digits.slice(0, 2)}) ${digits.slice(2, 6)}-${digits.slice(6)}`;
+    }
+    return `(${digits.slice(0, 2)}) ${digits.slice(2, 7)}-${digits.slice(7, 11)}`;
+  };
+
   const handleFormChange = (e: ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
-    setFormData(prev => ({ ...prev, [name]: value }));
+    let finalValue = value;
+    if (name === "phone") {
+      finalValue = formatPhone(value);
+    }
+    setFormData(prev => ({ ...prev, [name]: finalValue }));
+    
+    // Clear field-specific error as soon as user types
+    if (formErrors[name as keyof typeof formErrors]) {
+      setFormErrors(prev => ({ ...prev, [name]: undefined }));
+    }
   };
 
   const handleFormSubmit = (e: FormEvent) => {
     e.preventDefault();
+    
+    // Validations
+    const errors: { name?: string; company?: string; phone?: string; email?: string } = {};
+    
+    if (!formData.name.trim() || formData.name.trim().length < 3) {
+      errors.name = "Por favor, insira o seu nome completo (mínimo de 3 caracteres).";
+    }
+    
+    if (!formData.company.trim() || formData.company.trim().length < 2) {
+      errors.company = "Por favor, insira o nome da sua empresa (mínimo de 2 caracteres).";
+    }
+    
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!formData.email.trim() || !emailRegex.test(formData.email.trim())) {
+      errors.email = "Por favor, insira um e-mail válido (ex: nome@empresa.com).";
+    }
+    
+    const phoneDigits = formData.phone.replace(/\D/g, "");
+    if (phoneDigits.length < 10 || phoneDigits.length > 11) {
+      errors.phone = "Por favor, insira um WhatsApp válido com DDD (ex: (35) 99899-2647).";
+    }
+    
+    if (Object.keys(errors).length > 0) {
+      setFormErrors(errors);
+      return; // Stop submission
+    }
+    
+    // Clear errors if all pass
+    setFormErrors({});
+
     const newLead = {
       ...formData,
       id: Date.now().toString(),
@@ -233,7 +293,14 @@ export default function App() {
     const updatedLeads = [newLead, ...leadsList];
     setLeadsList(updatedLeads);
     localStorage.setItem("ana_flavia_leads", JSON.stringify(updatedLeads));
+    
     setFormSubmitted(true);
+    setDbSavedStatus("submitting");
+
+    const whatsappText = encodeURIComponent(
+      `Olá Ana Flávia! Meu nome é ${formData.name} da empresa ${formData.company}. Vi seu portfólio profissional de Marketing & UGC e gostaria de agendar uma consulta sobre nossa estratégia de conteúdo no segmento de ${formData.segment}.`
+    );
+    const whatsappUrl = `https://wa.me/5535998992647?text=${whatsappText}`;
 
     // Send to Cloudflare Pages D1 Database (Serverless Backend)
     fetch("/api/leads", {
@@ -245,23 +312,23 @@ export default function App() {
     }).then(response => {
       if (!response.ok) {
         console.warn("Backend submission failed, saved locally instead.");
+        setDbSavedStatus("failed");
+        // Open WhatsApp redirect only on database failure
+        setTimeout(() => {
+          window.open(whatsappUrl, "_blank");
+        }, 1500);
       } else {
         console.log("Successfully stored lead in D1 Database via Cloudflare Pages Function!");
+        setDbSavedStatus("success");
       }
     }).catch(err => {
       console.warn("Network error submitting lead to database. Saved locally.", err);
+      setDbSavedStatus("failed");
+      // Open WhatsApp redirect only on database failure
+      setTimeout(() => {
+        window.open(whatsappUrl, "_blank");
+      }, 1500);
     });
-
-    // Prefill WhatsApp link and trigger redirect after short delay or via direct button
-    const whatsappText = encodeURIComponent(
-      `Olá Ana Flávia! Meu nome é ${formData.name} da empresa ${formData.company}. Vi seu portfólio profissional de Marketing & UGC e gostaria de agendar uma consulta sobre nossa estratégia de conteúdo no segmento de ${formData.segment}.`
-    );
-    const whatsappUrl = `https://wa.me/5535998992647?text=${whatsappText}`;
-    
-    // Automatically open in tab
-    setTimeout(() => {
-      window.open(whatsappUrl, "_blank");
-    }, 1200);
   };
 
   // Clear leads helper
@@ -1500,29 +1567,76 @@ export default function App() {
                 
                 {formSubmitted ? (
                   <div className="p-6 bg-brand-olive-850 rounded-xl border border-brand-gold-500/30 text-center space-y-4 my-8">
-                    <div className="w-16 h-16 bg-brand-gold-500 text-brand-olive-900 rounded-full flex items-center justify-center font-bold text-3xl mx-auto shadow-lg">
-                      ✓
-                    </div>
-                    <h4 className="font-serif text-lg font-bold text-white">{SITE_COPY.contact.success.title}</h4>
-                    <p className="text-xs text-brand-olive-300 max-w-sm mx-auto leading-relaxed">
-                      {SITE_COPY.contact.success.subtitle}
-                    </p>
-                    <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
-                      <a 
-                        href={`https://wa.me/5535998992647?text=${encodeURIComponent(`Olá Ana Flávia, preenchi o formulário no seu site. Meu nome é ${formData.name} e gostaria de agendar uma consultoria estratégica.`)}`}
-                        target="_blank" 
-                        rel="noreferrer"
-                        className="px-6 py-3 bg-brand-gold-500 hover:bg-brand-gold-400 text-brand-olive-900 font-bold text-xs uppercase tracking-wider rounded-lg transition-colors inline-flex items-center gap-2 justify-center"
-                      >
-                        {SITE_COPY.contact.success.ctaManual} <Phone className="h-4 w-4" />
-                      </a>
-                      <button 
-                        onClick={() => setFormSubmitted(false)}
-                        className="px-4 py-3 bg-brand-olive-800 hover:bg-brand-olive-750 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors border border-brand-olive-700 cursor-pointer"
-                      >
-                        Enviar Outra Mensagem
-                      </button>
-                    </div>
+                    {dbSavedStatus === "submitting" ? (
+                      <div className="space-y-4 py-4">
+                        <div className="w-12 h-12 border-4 border-brand-gold-500 border-t-transparent rounded-full animate-spin mx-auto" />
+                        <h4 className="font-serif text-lg font-bold text-white">Enviando dados...</h4>
+                        <p className="text-xs text-brand-olive-300 max-w-sm mx-auto leading-relaxed">
+                          Salvando sua solicitação com segurança no banco de dados Cloudflare D1. Por favor, aguarde.
+                        </p>
+                      </div>
+                    ) : dbSavedStatus === "success" ? (
+                      <>
+                        <div className="w-16 h-16 bg-brand-gold-500 text-brand-olive-900 rounded-full flex items-center justify-center font-bold text-3xl mx-auto shadow-lg">
+                          ✓
+                        </div>
+                        <h4 className="font-serif text-lg font-bold text-white">Salvo no Banco de Dados!</h4>
+                        <p className="text-xs text-brand-olive-300 max-w-sm mx-auto leading-relaxed">
+                          Sua solicitação foi registrada com sucesso no <strong>Cloudflare D1 Database</strong>. Ana Flávia entrará em contato em breve!
+                        </p>
+                        <p className="text-[11px] text-brand-gold-400">
+                          Se você preferir falar agora, use o botão opcional abaixo para iniciar a conversa no WhatsApp.
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+                          <a 
+                            href={`https://wa.me/5535998992647?text=${encodeURIComponent(`Olá Ana Flávia! Enviei o formulário no seu site. Meu nome é ${formData.name} da empresa ${formData.company} e gostaria de agendar uma conversa.`)}`}
+                            target="_blank" 
+                            rel="noreferrer"
+                            className="px-6 py-3 bg-brand-gold-500 hover:bg-brand-gold-400 text-brand-olive-900 font-bold text-xs uppercase tracking-wider rounded-lg transition-colors inline-flex items-center gap-2 justify-center"
+                          >
+                            Falar no WhatsApp (Opcional) <Phone className="h-4 w-4" />
+                          </a>
+                          <button 
+                            onClick={() => {
+                              setFormSubmitted(false);
+                              setDbSavedStatus(null);
+                            }}
+                            className="px-4 py-3 bg-brand-olive-800 hover:bg-brand-olive-750 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors border border-brand-olive-700 cursor-pointer"
+                          >
+                            Enviar Outra Mensagem
+                          </button>
+                        </div>
+                      </>
+                    ) : (
+                      <>
+                        <div className="w-16 h-16 bg-amber-500 text-brand-olive-900 rounded-full flex items-center justify-center font-bold text-3xl mx-auto shadow-lg animate-pulse">
+                          ⚠
+                        </div>
+                        <h4 className="font-serif text-lg font-bold text-amber-400">Direcionando para o WhatsApp</h4>
+                        <p className="text-xs text-brand-olive-300 max-w-sm mx-auto leading-relaxed">
+                          Tivemos uma instabilidade temporária ao salvar no banco de dados. Para garantir seu atendimento, você está sendo redirecionado para o WhatsApp da Ana Flávia!
+                        </p>
+                        <div className="flex flex-col sm:flex-row gap-3 justify-center pt-2">
+                          <a 
+                            href={`https://wa.me/5535998992647?text=${encodeURIComponent(`Olá Ana Flávia! Meu nome é ${formData.name} da empresa ${formData.company}. Tentei preencher o formulário no seu site e gostaria de agendar uma conversa.`)}`}
+                            target="_blank" 
+                            rel="noreferrer"
+                            className="px-6 py-3 bg-brand-gold-500 hover:bg-brand-gold-400 text-brand-olive-900 font-bold text-xs uppercase tracking-wider rounded-lg transition-colors inline-flex items-center gap-2 justify-center"
+                          >
+                            {SITE_COPY.contact.success.ctaManual} <Phone className="h-4 w-4" />
+                          </a>
+                          <button 
+                            onClick={() => {
+                              setFormSubmitted(false);
+                              setDbSavedStatus(null);
+                            }}
+                            className="px-4 py-3 bg-brand-olive-800 hover:bg-brand-olive-750 text-white font-bold text-xs uppercase tracking-wider rounded-lg transition-colors border border-brand-olive-700 cursor-pointer"
+                          >
+                            Voltar ao Formulário
+                          </button>
+                        </div>
+                      </>
+                    )}
                   </div>
                 ) : (
                   <form onSubmit={handleFormSubmit} className="space-y-4 text-left">
@@ -1533,12 +1647,14 @@ export default function App() {
                         <input 
                           type="text" 
                           name="name" 
-                          required
                           value={formData.name}
                           onChange={handleFormChange}
                           placeholder={SITE_COPY.contact.form.namePlaceholder}
-                          className="w-full px-4 py-2.5 bg-brand-olive-950 border border-brand-olive-800 text-brand-olive-100 rounded-lg text-xs font-semibold focus:outline-none focus:border-brand-gold-500"
+                          className={`w-full px-4 py-2.5 bg-brand-olive-950 border ${formErrors.name ? 'border-red-500 focus:border-red-400' : 'border-brand-olive-800 focus:border-brand-gold-500'} text-brand-olive-100 rounded-lg text-xs font-semibold focus:outline-none`}
                         />
+                        {formErrors.name && (
+                          <span className="text-[10px] text-red-400 font-medium block mt-1">{formErrors.name}</span>
+                        )}
                       </div>
 
                       {/* Company Name input */}
@@ -1547,12 +1663,14 @@ export default function App() {
                         <input 
                           type="text" 
                           name="company" 
-                          required
                           value={formData.company}
                           onChange={handleFormChange}
                           placeholder={SITE_COPY.contact.form.companyPlaceholder}
-                          className="w-full px-4 py-2.5 bg-brand-olive-950 border border-brand-olive-800 text-brand-olive-100 rounded-lg text-xs font-semibold focus:outline-none focus:border-brand-gold-500"
+                          className={`w-full px-4 py-2.5 bg-brand-olive-950 border ${formErrors.company ? 'border-red-500 focus:border-red-400' : 'border-brand-olive-800 focus:border-brand-gold-500'} text-brand-olive-100 rounded-lg text-xs font-semibold focus:outline-none`}
                         />
+                        {formErrors.company && (
+                          <span className="text-[10px] text-red-400 font-medium block mt-1">{formErrors.company}</span>
+                        )}
                       </div>
                     </div>
 
@@ -1563,12 +1681,14 @@ export default function App() {
                         <input 
                           type="tel" 
                           name="phone" 
-                          required
                           value={formData.phone}
                           onChange={handleFormChange}
                           placeholder={SITE_COPY.contact.form.phonePlaceholder}
-                          className="w-full px-4 py-2.5 bg-brand-olive-950 border border-brand-olive-800 text-brand-olive-100 rounded-lg text-xs font-semibold focus:outline-none focus:border-brand-gold-500"
+                          className={`w-full px-4 py-2.5 bg-brand-olive-950 border ${formErrors.phone ? 'border-red-500 focus:border-red-400' : 'border-brand-olive-800 focus:border-brand-gold-500'} text-brand-olive-100 rounded-lg text-xs font-semibold focus:outline-none`}
                         />
+                        {formErrors.phone && (
+                          <span className="text-[10px] text-red-400 font-medium block mt-1">{formErrors.phone}</span>
+                        )}
                       </div>
 
                       {/* Segment select */}
@@ -1595,12 +1715,14 @@ export default function App() {
                       <input 
                         type="email" 
                         name="email" 
-                        required
                         value={formData.email}
                         onChange={handleFormChange}
                         placeholder={SITE_COPY.contact.form.emailPlaceholder}
-                        className="w-full px-4 py-2.5 bg-brand-olive-950 border border-brand-olive-800 text-brand-olive-100 rounded-lg text-xs font-semibold focus:outline-none focus:border-brand-gold-500"
+                        className={`w-full px-4 py-2.5 bg-brand-olive-950 border ${formErrors.email ? 'border-red-500 focus:border-red-400' : 'border-brand-olive-800 focus:border-brand-gold-500'} text-brand-olive-100 rounded-lg text-xs font-semibold focus:outline-none`}
                       />
+                      {formErrors.email && (
+                        <span className="text-[10px] text-red-400 font-medium block mt-1">{formErrors.email}</span>
+                      )}
                     </div>
 
                     {/* Message textarea */}
