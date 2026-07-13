@@ -1,0 +1,46 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400;0,500;0,600;0,700;1,400&family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600&display=swap');
+@import "tailwindcss";
+
+@theme {
+  --font-sans: "Plus Jakarta Sans", "Inter", ui-sans-serif, system-ui, sans-serif;
+  --font-serif: "Playfair Display", Georgia, serif;
+  --font-mono: "JetBrains Mono", ui-monospace, SFMono-Regular, monospace;
+  
+  --color-brand-olive-900: #1C231C;
+  --color-brand-olive-800: #273027;
+  --color-brand-olive-700: #3E4C3E;
+  --color-brand-olive-600: #546554;
+  --color-brand-olive-500: #6B7F6B;
+  --color-brand-olive-300: #A2B2A2;
+  --color-brand-olive-100: #E6EAE6;
+  --color-brand-olive-50: #F4F6F4;
+  --color-brand-gold-500: #C5A85C;
+  --color-brand-gold-400: #D9C383;
+  --color-brand-gold-300: #EADCB2;
+}
+
+@layer base {
+  body {
+    @apply font-sans bg-brand-olive-50 text-brand-olive-900 selection:bg-brand-gold-300 selection:text-brand-olive-900;
+  }
+}
+
+@keyframes marquee {
+  0% {
+    transform: translateX(0%);
+  }
+  100% {
+    transform: translateX(-50%);
+  }
+}
+
+.animate-marquee {
+  display: flex;
+  width: max-content;
+  animation: marquee 35s linear infinite;
+}
+
+.paused {
+  animation-play-state: paused !important;
+}
+
