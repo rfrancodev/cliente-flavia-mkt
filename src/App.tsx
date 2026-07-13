@@ -1580,7 +1580,7 @@ export default function App() {
                           value={formData.name}
                           onChange={handleFormChange}
                           placeholder={SITE_COPY.contact.form.namePlaceholder}
-                          className={`w-full px-4 py-2.5 bg-brand-olive-950 border ${formErrors.name ? 'border-red-500 focus:border-red-400' : 'border-brand-olive-800 focus:border-brand-gold-500'} text-brand-olive-100 rounded-lg text-xs font-semibold focus:outline-none`}
+                          className={`w-full h-11 px-4 bg-brand-olive-950 border ${formErrors.name ? 'border-red-500 focus:border-red-400' : 'border-brand-olive-800 focus:border-brand-gold-500'} text-brand-olive-100 rounded-lg text-xs font-semibold focus:outline-none`}
                         />
                         {formErrors.name && (
                           <span className="text-[10px] text-red-400 font-medium block mt-1">{formErrors.name}</span>
@@ -1596,7 +1596,7 @@ export default function App() {
                           value={formData.company}
                           onChange={handleFormChange}
                           placeholder={SITE_COPY.contact.form.companyPlaceholder}
-                          className={`w-full px-4 py-2.5 bg-brand-olive-950 border ${formErrors.company ? 'border-red-500 focus:border-red-400' : 'border-brand-olive-800 focus:border-brand-gold-500'} text-brand-olive-100 rounded-lg text-xs font-semibold focus:outline-none`}
+                          className={`w-full h-11 px-4 bg-brand-olive-950 border ${formErrors.company ? 'border-red-500 focus:border-red-400' : 'border-brand-olive-800 focus:border-brand-gold-500'} text-brand-olive-100 rounded-lg text-xs font-semibold focus:outline-none`}
                         />
                         {formErrors.company && (
                           <span className="text-[10px] text-red-400 font-medium block mt-1">{formErrors.company}</span>
@@ -1614,7 +1614,7 @@ export default function App() {
                           value={formData.phone}
                           onChange={handleFormChange}
                           placeholder={SITE_COPY.contact.form.phonePlaceholder}
-                          className={`w-full px-4 py-2.5 bg-brand-olive-950 border ${formErrors.phone ? 'border-red-500 focus:border-red-400' : 'border-brand-olive-800 focus:border-brand-gold-500'} text-brand-olive-100 rounded-lg text-xs font-semibold focus:outline-none`}
+                          className={`w-full h-11 px-4 bg-brand-olive-950 border ${formErrors.phone ? 'border-red-500 focus:border-red-400' : 'border-brand-olive-800 focus:border-brand-gold-500'} text-brand-olive-100 rounded-lg text-xs font-semibold focus:outline-none`}
                         />
                         {formErrors.phone && (
                           <span className="text-[10px] text-red-400 font-medium block mt-1">{formErrors.phone}</span>
@@ -1628,13 +1628,13 @@ export default function App() {
                           name="segment"
                           value={formData.segment}
                           onChange={handleFormChange}
-                          className="w-full px-4 py-2.5 bg-brand-olive-950 border border-brand-olive-800 text-brand-olive-100 rounded-lg text-xs font-bold focus:outline-none focus:border-brand-gold-500"
+                          className="w-full h-11 px-4 bg-brand-olive-950 border border-brand-olive-800 text-brand-olive-100 rounded-lg text-xs font-bold focus:outline-none focus:border-brand-gold-500 cursor-pointer"
                         >
-                          <option value="moda">Moda & Tecidos</option>
-                          <option value="beleza">Estética & Bem-Estar</option>
-                          <option value="joias">Joias & Semijoias</option>
-                          <option value="educacao">Educação & Cursos</option>
-                          <option value="outros">Outros Segmentos</option>
+                          <option value="moda" className="bg-brand-olive-950 text-brand-olive-100 py-2">Moda & Tecidos</option>
+                          <option value="beleza" className="bg-brand-olive-950 text-brand-olive-100 py-2">Estética & Bem-Estar</option>
+                          <option value="joias" className="bg-brand-olive-950 text-brand-olive-100 py-2">Joias & Semijoias</option>
+                          <option value="educacao" className="bg-brand-olive-950 text-brand-olive-100 py-2">Educação & Cursos</option>
+                          <option value="outros" className="bg-brand-olive-950 text-brand-olive-100 py-2">Outros Segmentos</option>
                         </select>
                       </div>
                     </div>
@@ -1648,7 +1648,7 @@ export default function App() {
                         value={formData.email}
                         onChange={handleFormChange}
                         placeholder={SITE_COPY.contact.form.emailPlaceholder}
-                        className={`w-full px-4 py-2.5 bg-brand-olive-950 border ${formErrors.email ? 'border-red-500 focus:border-red-400' : 'border-brand-olive-800 focus:border-brand-gold-500'} text-brand-olive-100 rounded-lg text-xs font-semibold focus:outline-none`}
+                        className={`w-full h-11 px-4 bg-brand-olive-950 border ${formErrors.email ? 'border-red-500 focus:border-red-400' : 'border-brand-olive-800 focus:border-brand-gold-500'} text-brand-olive-100 rounded-lg text-xs font-semibold focus:outline-none`}
                       />
                       {formErrors.email && (
                         <span className="text-[10px] text-red-400 font-medium block mt-1">{formErrors.email}</span>
